@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, absoluteUrl, uploadImage } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { io } from "socket.io-client";
@@ -218,7 +219,12 @@ export default function Feed() {
             <div className={`post ${p.type === "PULSE" ? "pulse" : ""}`} key={p.id}>
               <div className="postHead">
                 <div className="who">
-                  <b>{p.author.displayName}</b> <span className="muted">@{p.author.username}</span>
+                  <Link to={`/u/${p.author.username}`}>
+                    <b>{p.author.displayName}</b>
+                  </Link>{" "}
+                  <Link className="muted" to={`/u/${p.author.username}`}>
+                    @{p.author.username}
+                  </Link>
                 </div>
                 <div className="muted small">
                   {new Date(p.createdAt).toLocaleString()}
@@ -337,8 +343,12 @@ export default function Feed() {
                     <div className="replyItem" key={reply.id}>
                       <div className="replyHead">
                         <div className="who">
-                          <b>{reply.author.displayName}</b>{" "}
-                          <span className="muted">@{reply.author.username}</span>
+                          <Link to={`/u/${reply.author.username}`}>
+                            <b>{reply.author.displayName}</b>
+                          </Link>{" "}
+                          <Link className="muted" to={`/u/${reply.author.username}`}>
+                            @{reply.author.username}
+                          </Link>
                         </div>
                         <div className="muted small">
                           {new Date(reply.createdAt).toLocaleString()}
