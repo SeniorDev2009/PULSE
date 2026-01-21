@@ -49,6 +49,17 @@ userRouter.post("/follow/:userId", requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+userRouter.get("/follow/:userId", requireAuth, async (req, res) => {
+  const userId = req.params.userId;
+  if (userId === req.user.id) return res.json({ following: false });
+
+  const existing = await prisma.follow.findUnique({
+    where: { followerId_followingId: { followerId: req.user.id, followingId: userId } }
+  });
+
+  res.json({ following: Boolean(existing) });
+});
+
 userRouter.delete("/follow/:userId", requireAuth, async (req, res) => {
   const userId = req.params.userId;
 
