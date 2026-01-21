@@ -28,6 +28,10 @@ export default function Feed() {
   const [replyTarget, setReplyTarget] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [replyError, setReplyError] = useState("");
+  const [repliesTarget, setRepliesTarget] = useState(null);
+  const [replies, setReplies] = useState([]);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [repliesError, setRepliesError] = useState("");
 
   const socket = useMemo(() => {
     if (!token) return null;
@@ -133,6 +137,21 @@ export default function Feed() {
     }
   }
 
+  async function openRepliesModal(post) {
+    setRepliesTarget(post);
+    setReplies([]);
+    setRepliesError("");
+    setRepliesLoading(true);
+    try {
+      const d = await api(`/api/posts/${post.id}/replies`, { token });
+      setReplies(d.replies || []);
+    } catch {
+      setRepliesError("Javoblarni yuklab bo‘lmadi. Qayta urinib ko‘ring.");
+    } finally {
+      setRepliesLoading(false);
+    }
+  }
+
   return (
     <div className="grid">
       <section className="card">
@@ -226,6 +245,9 @@ export default function Feed() {
                 >
                   💬 Javob ({p._count.replies})
                 </button>
+                <button className="btn" onClick={() => openRepliesModal(p)} type="button">
+                  Replies
+                </button>
               </div>
             </div>
           ))}
@@ -276,6 +298,57 @@ export default function Feed() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {repliesTarget && (
+        <div className="modalOverlay" role="dialog" aria-modal="true">
+          <div className="modalCard">
+            <div className="modalHeader">
+              <h3>Replies</h3>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  setRepliesTarget(null);
+                  setReplies([]);
+                  setRepliesError("");
+                }}
+              >
+                Yopish
+              </button>
+            </div>
+            <div className="modalBody">
+              <div className="muted small">
+                @{repliesTarget.author.username} postiga javoblar
+              </div>
+              {repliesLoading && <div className="muted" style={{ marginTop: 10 }}>Yuklanmoqda...</div>}
+              {repliesError && <div className="error" style={{ marginTop: 10 }}>{repliesError}</div>}
+              {!repliesLoading && !repliesError && (
+                <div className="modalList">
+                  {replies.length === 0 && (
+                    <div className="muted" style={{ marginTop: 10 }}>
+                      Hozircha javob yo‘q.
+                    </div>
+                  )}
+                  {replies.map((reply) => (
+                    <div className="replyItem" key={reply.id}>
+                      <div className="replyHead">
+                        <div className="who">
+                          <b>{reply.author.displayName}</b>{" "}
+                          <span className="muted">@{reply.author.username}</span>
+                        </div>
+                        <div className="muted small">
+                          {new Date(reply.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="content">{reply.content}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

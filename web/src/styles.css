@@ -66,6 +66,11 @@ input, textarea, select {
 }
 .modalHeader { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .modalBody { margin-top: 10px; }
+.modalList { display: grid; gap: 10px; margin-top: 10px; }
+.replyItem {
+  border: 1px solid #1b2a47; border-radius: 12px; padding: 10px; background: #0b1222;
+}
+.replyHead { display: flex; justify-content: space-between; gap: 10px; }
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(6px); }

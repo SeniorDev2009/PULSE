@@ -199,3 +199,18 @@ postRouter.post("/:id/reply", requireAuth, async (req, res) => {
 
   res.json({ reply });
 });
+
+postRouter.get("/:id/replies", requireAuth, async (req, res) => {
+  const replies = await prisma.reply.findMany({
+    where: { postId: req.params.id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      author: { select: { id: true, username: true, displayName: true, avatarUrl: true } }
+    }
+  });
+
+  res.json({ replies });
+});
