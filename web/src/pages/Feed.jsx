@@ -25,6 +25,9 @@ export default function Feed() {
   const [type, setType] = useState("POST");
   const [mediaUrl, setMediaUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyError, setReplyError] = useState("");
 
   const socket = useMemo(() => {
     if (!token) return null;
@@ -90,6 +93,34 @@ export default function Feed() {
         x.id === p.id ? { ...x, likedByMe: !liked, _count: { ...x._count, likes: d.likes } } : x
       )
     );
+  }
+
+  async function submitReply(e) {
+    e.preventDefault();
+    if (!replyTarget) return;
+    if (!replyContent.trim()) {
+      setReplyError("Javob matnini kiriting.");
+      return;
+    }
+    setReplyError("");
+    try {
+      await api(`/api/posts/${replyTarget.id}/reply`, {
+        method: "POST",
+        token,
+        body: { content: replyContent }
+      });
+      setItems((prev) =>
+        prev.map((x) =>
+          x.id === replyTarget.id
+            ? { ...x, _count: { ...x._count, replies: x._count.replies + 1 } }
+            : x
+        )
+      );
+      setReplyContent("");
+      setReplyTarget(null);
+    } catch {
+      setReplyError("Javob yuborilmadi. Qayta urinib ko‘ring.");
+    }
   }
 
   async function onPickFile(file) {
@@ -184,7 +215,17 @@ export default function Feed() {
                 <button className="btn" onClick={() => toggleLike(p)} type="button">
                   {p.likedByMe ? "❤️" : "🤍"} {p._count.likes}
                 </button>
-                <span className="muted">💬 {p._count.replies}</span>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setReplyTarget(p);
+                    setReplyContent("");
+                    setReplyError("");
+                  }}
+                  type="button"
+                >
+                  💬 Javob ({p._count.replies})
+                </button>
               </div>
             </div>
           ))}
@@ -196,6 +237,49 @@ export default function Feed() {
           </button>
         )}
       </section>
+
+      {replyTarget && (
+        <div className="modalOverlay" role="dialog" aria-modal="true">
+          <div className="modalCard">
+            <div className="modalHeader">
+              <h3>Javob yozish</h3>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  setReplyTarget(null);
+                  setReplyContent("");
+                  setReplyError("");
+                }}
+              >
+                Yopish
+              </button>
+            </div>
+            <div className="modalBody">
+              <div className="muted small">
+                @{replyTarget.author.username} postiga javob
+              </div>
+              <form onSubmit={submitReply} className="form" style={{ marginTop: 10 }}>
+                <textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Javobingiz..."
+                  rows={4}
+                />
+                {replyError && <div className="error">{replyError}</div>}
+                <div className="row" style={{ justifyContent: "flex-end" }}>
+                  <button className="btn" type="button" onClick={() => setReplyTarget(null)}>
+                    Bekor qilish
+                  </button>
+                  <button className="btn primary" type="submit">
+                    Yuborish
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
