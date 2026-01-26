@@ -29,7 +29,9 @@ const io = new Server(server, {
 app.set("io", io);
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+const baseDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const uploadPath = path.resolve(baseDir, uploadDir);
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
 
 app.use(helmet());
 app.use(
@@ -48,7 +50,7 @@ app.use(
   })
 );
 
-app.use(`/${uploadDir}`, express.static(path.resolve(uploadDir)));
+app.use(`/${uploadDir}`, express.static(uploadPath));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 

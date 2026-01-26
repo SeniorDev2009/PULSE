@@ -8,9 +8,11 @@ import { requireAuth } from "../middleware.js";
 export const postRouter = express.Router();
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
+const baseDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const uploadPath = path.resolve(baseDir, uploadDir);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => cb(null, uploadPath),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `${Date.now()}_${Math.random().toString(16).slice(2)}${ext}`);
