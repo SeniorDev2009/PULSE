@@ -5,11 +5,12 @@
   "scripts": {
   "dev": "nodemon src/index.js",
   "start": "node src/index.js",
-  "postinstall": "prisma generate",
-  "prisma:generate": "prisma generate",
+  "postinstall": "npx prisma generate",
+  "prisma:generate": "npx prisma generate",
   "prisma:migrate": "prisma migrate dev",
   "prisma:studio": "prisma studio",
-  "seed": "node prisma/seed.js"
+  "seed": "node prisma/seed.js",
+  "migrate:deploy": "npx prisma migrate deploy"
 },
   "dependencies": {
     "@prisma/client": "^5.18.0",
