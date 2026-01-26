@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import path from "path";
+import { fileURLToPath } from "url";
 import fs from "fs";
 
 import { prisma } from "./prisma.js";
@@ -29,7 +30,9 @@ const io = new Server(server, {
 app.set("io", io);
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
-const baseDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const baseDir = path.resolve(__dirname, "..");
 const uploadPath = path.resolve(baseDir, uploadDir);
 if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
 

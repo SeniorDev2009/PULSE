@@ -2,13 +2,16 @@ import express from "express";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
+import { fileURLToPath } from "url";
 import { prisma } from "../prisma.js";
 import { requireAuth } from "../middleware.js";
 
 export const postRouter = express.Router();
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
-const baseDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const baseDir = path.resolve(__dirname, "..");
 const uploadPath = path.resolve(baseDir, uploadDir);
 
 const storage = multer.diskStorage({
