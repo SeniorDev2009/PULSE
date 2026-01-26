@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { Server } from "socket.io";
 import path from "path";
+import { fileURLToPath } from "url";
 import fs from "fs";
 
 import { prisma } from "./prisma.js";
@@ -29,7 +30,11 @@ const io = new Server(server, {
 app.set("io", io);
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const baseDir = path.resolve(__dirname, "..");
+const uploadPath = path.resolve(baseDir, uploadDir);
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
 
 app.use(helmet());
 app.use(
@@ -48,7 +53,7 @@ app.use(
   })
 );
 
-app.use(`/${uploadDir}`, express.static(path.resolve(uploadDir)));
+app.use(`/${uploadDir}`, express.static(uploadPath));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, absoluteUrl, uploadImage } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { io } from "socket.io-client";
@@ -25,6 +26,13 @@ export default function Feed() {
   const [type, setType] = useState("POST");
   const [mediaUrl, setMediaUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyError, setReplyError] = useState("");
+  const [repliesTarget, setRepliesTarget] = useState(null);
+  const [replies, setReplies] = useState([]);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [repliesError, setRepliesError] = useState("");
 
   const socket = useMemo(() => {
     if (!token) return null;
@@ -92,6 +100,34 @@ export default function Feed() {
     );
   }
 
+  async function submitReply(e) {
+    e.preventDefault();
+    if (!replyTarget) return;
+    if (!replyContent.trim()) {
+      setReplyError("Javob matnini kiriting.");
+      return;
+    }
+    setReplyError("");
+    try {
+      await api(`/api/posts/${replyTarget.id}/reply`, {
+        method: "POST",
+        token,
+        body: { content: replyContent }
+      });
+      setItems((prev) =>
+        prev.map((x) =>
+          x.id === replyTarget.id
+            ? { ...x, _count: { ...x._count, replies: x._count.replies + 1 } }
+            : x
+        )
+      );
+      setReplyContent("");
+      setReplyTarget(null);
+    } catch {
+      setReplyError("Javob yuborilmadi. Qayta urinib ko‘ring.");
+    }
+  }
+
   async function onPickFile(file) {
     setUploading(true);
     try {
@@ -99,6 +135,21 @@ export default function Feed() {
       setMediaUrl(d.url);
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function openRepliesModal(post) {
+    setRepliesTarget(post);
+    setReplies([]);
+    setRepliesError("");
+    setRepliesLoading(true);
+    try {
+      const d = await api(`/api/posts/${post.id}/replies`, { token });
+      setReplies(d.replies || []);
+    } catch {
+      setRepliesError("Javoblarni yuklab bo‘lmadi. Qayta urinib ko‘ring.");
+    } finally {
+      setRepliesLoading(false);
     }
   }
 
@@ -168,7 +219,12 @@ export default function Feed() {
             <div className={`post ${p.type === "PULSE" ? "pulse" : ""}`} key={p.id}>
               <div className="postHead">
                 <div className="who">
-                  <b>{p.author.displayName}</b> <span className="muted">@{p.author.username}</span>
+                  <Link to={`/u/${p.author.username}`}>
+                    <b>{p.author.displayName}</b>
+                  </Link>{" "}
+                  <Link className="muted" to={`/u/${p.author.username}`}>
+                    @{p.author.username}
+                  </Link>
                 </div>
                 <div className="muted small">
                   {new Date(p.createdAt).toLocaleString()}
@@ -184,7 +240,20 @@ export default function Feed() {
                 <button className="btn" onClick={() => toggleLike(p)} type="button">
                   {p.likedByMe ? "❤️" : "🤍"} {p._count.likes}
                 </button>
-                <span className="muted">💬 {p._count.replies}</span>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setReplyTarget(p);
+                    setReplyContent("");
+                    setReplyError("");
+                  }}
+                  type="button"
+                >
+                  💬 Javob ({p._count.replies})
+                </button>
+                <button className="btn" onClick={() => openRepliesModal(p)} type="button">
+                  Replies
+                </button>
               </div>
             </div>
           ))}
@@ -196,6 +265,104 @@ export default function Feed() {
           </button>
         )}
       </section>
+
+      {replyTarget && (
+        <div className="modalOverlay" role="dialog" aria-modal="true">
+          <div className="modalCard">
+            <div className="modalHeader">
+              <h3>Javob yozish</h3>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  setReplyTarget(null);
+                  setReplyContent("");
+                  setReplyError("");
+                }}
+              >
+                Yopish
+              </button>
+            </div>
+            <div className="modalBody">
+              <div className="muted small">
+                @{replyTarget.author.username} postiga javob
+              </div>
+              <form onSubmit={submitReply} className="form" style={{ marginTop: 10 }}>
+                <textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Javobingiz..."
+                  rows={4}
+                />
+                {replyError && <div className="error">{replyError}</div>}
+                <div className="row" style={{ justifyContent: "flex-end" }}>
+                  <button className="btn" type="button" onClick={() => setReplyTarget(null)}>
+                    Bekor qilish
+                  </button>
+                  <button className="btn primary" type="submit">
+                    Yuborish
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {repliesTarget && (
+        <div className="modalOverlay" role="dialog" aria-modal="true">
+          <div className="modalCard">
+            <div className="modalHeader">
+              <h3>Replies</h3>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  setRepliesTarget(null);
+                  setReplies([]);
+                  setRepliesError("");
+                }}
+              >
+                Yopish
+              </button>
+            </div>
+            <div className="modalBody">
+              <div className="muted small">
+                @{repliesTarget.author.username} postiga javoblar
+              </div>
+              {repliesLoading && <div className="muted" style={{ marginTop: 10 }}>Yuklanmoqda...</div>}
+              {repliesError && <div className="error" style={{ marginTop: 10 }}>{repliesError}</div>}
+              {!repliesLoading && !repliesError && (
+                <div className="modalList">
+                  {replies.length === 0 && (
+                    <div className="muted" style={{ marginTop: 10 }}>
+                      Hozircha javob yo‘q.
+                    </div>
+                  )}
+                  {replies.map((reply) => (
+                    <div className="replyItem" key={reply.id}>
+                      <div className="replyHead">
+                        <div className="who">
+                          <Link to={`/u/${reply.author.username}`}>
+                            <b>{reply.author.displayName}</b>
+                          </Link>{" "}
+                          <Link className="muted" to={`/u/${reply.author.username}`}>
+                            @{reply.author.username}
+                          </Link>
+                        </div>
+                        <div className="muted small">
+                          {new Date(reply.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="content">{reply.content}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

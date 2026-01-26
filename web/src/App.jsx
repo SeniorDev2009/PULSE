@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./lib/auth.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Feed from "./pages/Feed.jsx";
+import Profile from "./pages/Profile.jsx";
 
 function Shell({ children }) {
   const { user, logout } = useAuth();
@@ -15,6 +16,7 @@ function Shell({ children }) {
         <nav className="nav">
           {user ? (
             <>
+              <Link className="btn" to={`/u/${user.username}`}>Profil</Link>
               <span className="muted">@{user.username}</span>
               <button className="btn" onClick={logout}>Chiqish</button>
             </>
@@ -43,6 +45,7 @@ export default function App() {
       <Shell>
         <Routes>
           <Route path="/" element={<Private><Feed /></Private>} />
+          <Route path="/u/:username" element={<Private><Profile /></Private>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

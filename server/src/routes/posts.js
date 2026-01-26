@@ -2,15 +2,20 @@ import express from "express";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
+import { fileURLToPath } from "url";
 import { prisma } from "../prisma.js";
 import { requireAuth } from "../middleware.js";
 
 export const postRouter = express.Router();
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const baseDir = path.resolve(__dirname, "..");
+const uploadPath = path.resolve(baseDir, uploadDir);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => cb(null, uploadPath),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `${Date.now()}_${Math.random().toString(16).slice(2)}${ext}`);
@@ -198,4 +203,19 @@ postRouter.post("/:id/reply", requireAuth, async (req, res) => {
   });
 
   res.json({ reply });
+});
+
+postRouter.get("/:id/replies", requireAuth, async (req, res) => {
+  const replies = await prisma.reply.findMany({
+    where: { postId: req.params.id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      author: { select: { id: true, username: true, displayName: true, avatarUrl: true } }
+    }
+  });
+
+  res.json({ replies });
 });
