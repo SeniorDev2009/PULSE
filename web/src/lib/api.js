@@ -1,6 +1,6 @@
 // DEV: default localhost
 // PROD (Vercel): VITE_API_URL ni qo'yasiz, masalan: https://your-backend.onrender.com
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const BASE = (import.meta.env.VITE_API_URL || "https://pulse-l88r.onrender.com/").replace(/\/$/, "");
 
 export async function api(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
