@@ -17,6 +17,7 @@ import { postRouter } from "./routes/posts.js";
 import { requireAuthSocket } from "./socketAuth.js";
 
 const app = express();
+app.set("trust proxy", 1); // ✅ Render/Cloudflare ortida ishlashi uchun
 const server = http.createServer(app);
 
 // ✅ multiple origins (comma-separated)
