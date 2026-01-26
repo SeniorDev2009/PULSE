@@ -11,7 +11,7 @@ export const postRouter = express.Router();
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const baseDir = path.resolve(__dirname, "..");
+const baseDir = path.resolve(__dirname, "..", "..");
 const uploadPath = path.resolve(baseDir, uploadDir);
 
 const storage = multer.diskStorage({
