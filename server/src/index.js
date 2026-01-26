@@ -19,32 +19,40 @@ import { requireAuthSocket } from "./socketAuth.js";
 const app = express();
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_ORIGIN,
-    credentials: true
-  }
-});
+// ✅ multiple origins (comma-separated)
+const allowedOrigins = (process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
+const corsOptions = {
+  origin: (origin, cb) => {
+    // Postman/curl yoki server-to-server so‘rovlar uchun
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+const io = new Server(server, { cors: corsOptions });
 app.set("io", io);
 
 const uploadDir = process.env.UPLOAD_DIR || "uploads";
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.CLIENT_ORIGIN,
-    credentials: true
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ preflight
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(
   rateLimit({
     windowMs: 60_000,
-    max: 180
+    max: 180,
   })
 );
 
@@ -59,9 +67,7 @@ app.use("/api/posts", postRouter);
 io.use(requireAuthSocket);
 
 io.on("connection", (socket) => {
-  // user rooms
   socket.join(`user:${socket.user.id}`);
-
   socket.on("disconnect", () => {});
 });
 
