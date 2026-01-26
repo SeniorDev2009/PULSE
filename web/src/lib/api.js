@@ -1,8 +1,11 @@
 const DEFAULT_BASE = "http://localhost:4000";
-const BASE =
-  typeof window !== "undefined"
-    ? import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:4000`
-    : DEFAULT_BASE;
+const BASE = (() => {
+  if (typeof window === "undefined") return DEFAULT_BASE;
+  const envBase = import.meta.env.VITE_API_BASE;
+  if (envBase) return envBase;
+  const protocol = window.location.protocol || "http:";
+  return `${protocol}//${window.location.hostname}:4000`;
+})();
 
 export async function api(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
