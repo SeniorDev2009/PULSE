@@ -1,4 +1,8 @@
-const BASE = "http://localhost:4000";
+const DEFAULT_BASE = "http://localhost:4000";
+const BASE =
+  typeof window !== "undefined"
+    ? import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:4000`
+    : DEFAULT_BASE;
 
 export async function api(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
